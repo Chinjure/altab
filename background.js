@@ -16,16 +16,6 @@ chrome.tabs.onActivated.addListener(({ tabId }) => {
 });
 
 chrome.commands.onCommand.addListener(async (command) => {
-  if (command === 'switch-to-previous-tab') {
-    if (previousTabId != null) {
-      const tab = await chrome.tabs.get(previousTabId).catch(() => null);
-      if (tab && isSwitchableUrl(tab.url)) {
-        chrome.tabs.update(previousTabId, { active: true });
-      }
-    }
-    return;
-  }
-
   if (command !== 'toggle-tab-switcher') return;
 
   const allTabs = await chrome.tabs.query({ currentWindow: true });
@@ -37,7 +27,8 @@ chrome.commands.onCommand.addListener(async (command) => {
     await chrome.tabs.sendMessage(activeTab.id, {
       action: SWITCHER_ACTION,
       tabs,
-      activeTabId: activeTab.id
+      activeTabId: activeTab.id,
+      previousTabId
     });
     return;
   } catch { /* inject below */ }
@@ -57,7 +48,8 @@ chrome.commands.onCommand.addListener(async (command) => {
       await chrome.tabs.sendMessage(activeTab.id, {
         action: SWITCHER_ACTION,
         tabs,
-        activeTabId: activeTab.id
+        activeTabId: activeTab.id,
+        previousTabId
       });
       return;
     } catch { /* fall through to other tabs */ }
@@ -87,7 +79,8 @@ chrome.commands.onCommand.addListener(async (command) => {
       await chrome.tabs.sendMessage(tab.id, {
         action: SWITCHER_ACTION,
         tabs,
-        activeTabId: activeTab.id
+        activeTabId: activeTab.id,
+        previousTabId
       });
       return;
     } catch { /* try next */ }
