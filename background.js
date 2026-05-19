@@ -2,7 +2,30 @@ const SWITCHER_ACTION = 'toggle-switcher';
 const SWITCH_TAB_ACTION = 'switch-tab';
 const GET_TABS_ACTION = 'get-tabs';
 
+let previousTabId = null;
+let activeTabId = null;
+
+// Initialize activeTabId on service worker start
+chrome.tabs.query({ active: true, currentWindow: true }).then(([tab]) => {
+  if (tab) activeTabId = tab.id;
+});
+
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  previousTabId = activeTabId;
+  activeTabId = tabId;
+});
+
 chrome.commands.onCommand.addListener(async (command) => {
+  if (command === 'switch-to-previous-tab') {
+    if (previousTabId != null) {
+      const tab = await chrome.tabs.get(previousTabId).catch(() => null);
+      if (tab && isSwitchableUrl(tab.url)) {
+        chrome.tabs.update(previousTabId, { active: true });
+      }
+    }
+    return;
+  }
+
   if (command !== 'toggle-tab-switcher') return;
 
   const allTabs = await chrome.tabs.query({ currentWindow: true });

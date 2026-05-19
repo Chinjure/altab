@@ -11,6 +11,12 @@
         "default": "Alt+Q"
       },
       "description": "打开/切换标签页选择器"
+    },
+    "switch-to-previous-tab": {
+      "suggested_key": {
+        "default": "Alt+W"
+      },
+      "description": "切换到上一个活跃的标签页"
     }
   },
   "background": {
