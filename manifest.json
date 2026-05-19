@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "AltTab - Tab Switcher",
+  "version": "1.0.0",
+  "description": "像 Windows Alt+Tab 一样快速切换标签页",
+  "permissions": ["tabs", "activeTab"],
+  "commands": {
+    "toggle-tab-switcher": {
+      "suggested_key": {
+        "default": "Alt+Q"
+      },
+      "description": "打开/切换标签页选择器"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["overlay.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
