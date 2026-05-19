@@ -106,6 +106,7 @@
     currentTabId = activeId;
 
     // Pre-select the last active tab for quick-switch (like Windows Alt+Tab)
+    selectedIdx = -1;
     if (lastActiveId != null) {
       selectedIdx = tabs.findIndex(t => t.id === lastActiveId);
     }
@@ -207,8 +208,8 @@
         if (!e.altKey && !e.ctrlKey && !e.metaKey) {
           commitAndClose();
         }
-      } else {
-        // Keys released before overlay opened (race condition) — queue commit
+      } else if (!e.altKey && !e.ctrlKey && !e.metaKey) {
+        // Both Alt and Q released before overlay opened — queue quick commit
         queuedCommit = true;
       }
     }

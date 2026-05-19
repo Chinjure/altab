@@ -15,8 +15,11 @@ chrome.commands.onCommand.addListener(async (command) => {
   const allTabs = await chrome.tabs.query({ currentWindow: true });
   const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
-  // Determine the tab to pre-select: the previously active tab, or the next one
-  const prevId = lastActiveTabId !== activeTab.id ? lastActiveTabId : null;
+  // Determine the tab to pre-select: the previously active tab (if switchable)
+  const prevTab = allTabs.find(t => t.id === lastActiveTabId);
+  const prevId = (prevTab && prevTab.id !== activeTab.id && isSwitchableUrl(prevTab.url))
+    ? lastActiveTabId
+    : null;
 
   try {
     await chrome.tabs.sendMessage(activeTab.id, {
