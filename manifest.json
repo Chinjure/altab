@@ -3,7 +3,8 @@
   "name": "AltTab - Tab Switcher",
   "version": "1.0.0",
   "description": "像 Windows Alt+Tab 一样快速切换标签页",
-  "permissions": ["tabs", "activeTab"],
+  "permissions": ["tabs", "activeTab", "scripting"],
+  "host_permissions": ["<all_urls>"],
   "commands": {
     "toggle-tab-switcher": {
       "suggested_key": {

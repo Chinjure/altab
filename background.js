@@ -2,8 +2,6 @@ const SWITCHER_ACTION = 'toggle-switcher';
 const SWITCH_TAB_ACTION = 'switch-tab';
 const GET_TABS_ACTION = 'get-tabs';
 
-let switcherOpen = false;
-
 chrome.commands.onCommand.addListener(async (command) => {
   if (command !== 'toggle-tab-switcher') return;
 
@@ -16,20 +14,39 @@ chrome.commands.onCommand.addListener(async (command) => {
       tabs: sanitizeTabs(allTabs),
       activeTabId: activeTab.id
     });
-    switcherOpen = !switcherOpen;
   } catch {
-    // Content script not available (e.g. chrome:// pages)
-    // Try the next switchable tab
-    const switchable = allTabs.find(t => t.id !== activeTab.id && isSwitchableUrl(t.url));
-    if (switchable) {
-      await chrome.tabs.update(switchable.id, { active: true });
-      await sleep(200);
-      await chrome.tabs.sendMessage(switchable.id, {
-        action: SWITCHER_ACTION,
-        tabs: sanitizeTabs(allTabs),
-        activeTabId: activeTab.id
-      });
-      switcherOpen = true;
+    // Content script not available — try to inject it, then try each switchable tab
+    for (const tab of allTabs) {
+      if (tab.id === activeTab.id || !isSwitchableUrl(tab.url)) continue;
+
+      await chrome.tabs.update(tab.id, { active: true });
+      await sleep(300);
+
+      // Try injecting content script + CSS in case it wasn't auto-injected
+      // (e.g. extension was just installed on already-open tabs)
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ['content.js']
+        });
+        await chrome.scripting.insertCSS({
+          target: { tabId: tab.id },
+          files: ['overlay.css']
+        });
+      } catch {
+        // Injection may fail on restricted pages; skip to next tab
+      }
+
+      try {
+        await chrome.tabs.sendMessage(tab.id, {
+          action: SWITCHER_ACTION,
+          tabs: sanitizeTabs(allTabs),
+          activeTabId: activeTab.id
+        });
+        return;
+      } catch {
+        // Try next switchable tab
+      }
     }
   }
 });
