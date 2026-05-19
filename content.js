@@ -11,7 +11,6 @@
   let selectedIdx = 0;
   let currentTabId = null;
   let isOpen = false;
-  let queuedCommit = false;
 
   /* ── DOM ────────────────────────────────────────────────── */
 
@@ -100,36 +99,19 @@
 
   /* ── Show / Hide ────────────────────────────────────────── */
 
-  function show(tabList, activeId, lastActiveId) {
+  function show(tabList, activeId) {
     if (!document.body) return;
     tabs = tabList;
     currentTabId = activeId;
 
-    // Pre-select the last active tab for quick-switch (like Windows Alt+Tab)
-    selectedIdx = -1;
-    if (lastActiveId != null) {
-      selectedIdx = tabs.findIndex(t => t.id === lastActiveId);
-    }
-    if (selectedIdx === -1) {
-      const curIdx = tabs.findIndex(t => t.id === activeId);
-      selectedIdx = (curIdx + 1) % tabs.length;
-    }
+    const curIdx = tabs.findIndex(t => t.id === activeId);
+    selectedIdx = (curIdx + 1) % tabs.length;
 
     buildOverlay();
     renderTabs();
 
     document.getElementById(OVERLAY_ID).classList.add('visible');
     isOpen = true;
-
-    // If keys were released before the overlay opened, commit quickly
-    if (queuedCommit) {
-      queuedCommit = false;
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (isOpen) commitAndClose();
-        });
-      });
-    }
   }
 
   function dismiss() {
@@ -202,15 +184,9 @@
   }, true);
 
   document.addEventListener('keyup', function (e) {
-    if (e.key === 'Alt' || e.key === 'q' || e.key === 'Q') {
-      if (isOpen) {
-        // Only commit when Alt is released (not just Q while Alt held)
-        if (!e.altKey && !e.ctrlKey && !e.metaKey) {
-          commitAndClose();
-        }
-      } else if (!e.altKey && !e.ctrlKey && !e.metaKey) {
-        // Both Alt and Q released before overlay opened — queue quick commit
-        queuedCommit = true;
+    if ((e.key === 'Alt' || e.key === 'q' || e.key === 'Q') && isOpen) {
+      if (!e.altKey && !e.ctrlKey && !e.metaKey) {
+        commitAndClose();
       }
     }
   }, true);
@@ -222,7 +198,7 @@
       if (isOpen) {
         cycle(1);
       } else {
-        show(msg.tabs, msg.activeTabId, msg.lastActiveTabId);
+        show(msg.tabs, msg.activeTabId);
       }
     }
   });
