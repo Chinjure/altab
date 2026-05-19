@@ -11,9 +11,7 @@
   let selectedIdx = 0;
   let currentTabId = null;
   let isOpen = false;
-  let openTime = 0;
-
-  const MIN_VISIBLE_MS = 250;
+  let queuedCommit = false;
 
   /* ── DOM ────────────────────────────────────────────────── */
 
@@ -102,19 +100,35 @@
 
   /* ── Show / Hide ────────────────────────────────────────── */
 
-  function show(tabList, activeId) {
+  function show(tabList, activeId, lastActiveId) {
     if (!document.body) return;
     tabs = tabList;
     currentTabId = activeId;
-    selectedIdx = tabs.findIndex(t => t.id === activeId);
-    if (selectedIdx === -1) selectedIdx = 0;
-    openTime = Date.now();
+
+    // Pre-select the last active tab for quick-switch (like Windows Alt+Tab)
+    if (lastActiveId != null) {
+      selectedIdx = tabs.findIndex(t => t.id === lastActiveId);
+    }
+    if (selectedIdx === -1) {
+      const curIdx = tabs.findIndex(t => t.id === activeId);
+      selectedIdx = (curIdx + 1) % tabs.length;
+    }
 
     buildOverlay();
     renderTabs();
 
     document.getElementById(OVERLAY_ID).classList.add('visible');
     isOpen = true;
+
+    // If keys were released before the overlay opened, commit quickly
+    if (queuedCommit) {
+      queuedCommit = false;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (isOpen) commitAndClose();
+        });
+      });
+    }
   }
 
   function dismiss() {
@@ -187,12 +201,16 @@
   }, true);
 
   document.addEventListener('keyup', function (e) {
-    if (!isOpen) return;
-    // Don't auto-close on very brief presses
-    if (Date.now() - openTime < MIN_VISIBLE_MS) return;
-    // Only close when modifier is truly released (not while Alt still held)
-    if (!e.altKey && !e.ctrlKey && !e.metaKey && (e.key === 'Alt' || e.key === 'q' || e.key === 'Q')) {
-      commitAndClose();
+    if (e.key === 'Alt' || e.key === 'q' || e.key === 'Q') {
+      if (isOpen) {
+        // Only commit when Alt is released (not just Q while Alt held)
+        if (!e.altKey && !e.ctrlKey && !e.metaKey) {
+          commitAndClose();
+        }
+      } else {
+        // Keys released before overlay opened (race condition) — queue commit
+        queuedCommit = true;
+      }
     }
   }, true);
 
@@ -203,7 +221,7 @@
       if (isOpen) {
         cycle(1);
       } else {
-        show(msg.tabs, msg.activeTabId);
+        show(msg.tabs, msg.activeTabId, msg.lastActiveTabId);
       }
     }
   });
