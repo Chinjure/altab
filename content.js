@@ -108,15 +108,26 @@
     selectedIdx = (curIdx + 1) % tabs.length;
 
     buildOverlay();
+    const overlay = document.getElementById(OVERLAY_ID);
+    overlay.style.display = '';
+    overlay.style.backdropFilter = '';
+    overlay.style.WebkitBackdropFilter = '';
     renderTabs();
 
-    document.getElementById(OVERLAY_ID).classList.add('visible');
+    overlay.classList.add('visible');
     isOpen = true;
   }
 
   function dismiss() {
     if (!isOpen) return;
-    document.getElementById(OVERLAY_ID)?.classList.remove('visible');
+    const overlay = document.getElementById(OVERLAY_ID);
+    if (overlay) {
+      overlay.style.backdropFilter = 'none';
+      overlay.style.WebkitBackdropFilter = 'none';
+      overlay.style.display = 'none';
+      overlay.classList.remove('visible');
+      void overlay.offsetHeight;
+    }
     isOpen = false;
     currentTabId = null;
   }
