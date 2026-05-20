@@ -11,9 +11,6 @@
   let selectedIdx = 0;
   let currentTabId = null;
   let isOpen = false;
-  let pendingMode = false;
-  let pendingTimer = null;
-  let pendingPrevId = null;
 
   /* ── DOM ────────────────────────────────────────────────── */
 
@@ -187,16 +184,8 @@
   }, true);
 
   document.addEventListener('keyup', function (e) {
-    if (e.key === 'Alt' || e.key === 'q' || e.key === 'Q') {
-      if (isOpen && !e.altKey && !e.ctrlKey && !e.metaKey) {
-        commitAndClose();
-      } else if (pendingMode && !e.altKey && !e.ctrlKey && !e.metaKey) {
-        clearTimeout(pendingTimer);
-        pendingMode = false;
-        if (pendingPrevId != null) {
-          chrome.runtime.sendMessage({ action: 'switch-tab', tabId: pendingPrevId });
-        }
-      }
+    if ((e.key === 'Alt' || e.key === 'q' || e.key === 'Q') && isOpen && !e.altKey && !e.ctrlKey && !e.metaKey) {
+      commitAndClose();
     }
   }, true);
 
@@ -204,19 +193,23 @@
 
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.action === 'toggle-switcher') {
-      if (isOpen) {
-        cycle(1);
-      } else if (pendingMode) {
-        clearTimeout(pendingTimer);
-        pendingMode = false;
+      const overlay = document.getElementById(OVERLAY_ID);
+
+      if (isOpen && overlay && overlay.classList.contains('visible')) {
+        // Overlay is visible: refresh tab data (MRU order may have changed) and cycle
+        const prevSelectedId = tabs[selectedIdx]?.id;
+        tabs = msg.tabs;
+        currentTabId = msg.activeTabId;
+        const idx = tabs.findIndex(t => t.id === prevSelectedId);
+        selectedIdx = idx >= 0 ? (idx + 1) % tabs.length : 0;
+        renderTabs();
+      } else if (isOpen && overlay) {
+        // Overlay DOM exists but is hidden (tab was backgrounded): show with fresh data
         show(msg.tabs, msg.activeTabId);
       } else {
-        pendingMode = true;
-        pendingPrevId = msg.previousTabId;
-        pendingTimer = setTimeout(() => {
-          pendingMode = false;
-          show(msg.tabs, msg.activeTabId);
-        }, 200);
+        // Not open, or DOM was destroyed (e.g. page navigated): fresh show
+        isOpen = false;
+        show(msg.tabs, msg.activeTabId);
       }
     }
   });
