@@ -201,13 +201,23 @@
     }
   }, true);
 
-  /* ── bfcache ────────────────────────────────────────────── */
+  /* ── Tab backgrounding ──────────────────────────────────── */
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && isOpen) {
+      dismiss();
+    }
+  });
 
   window.addEventListener('pageshow', (e) => {
     if (e.persisted) {
       isOpen = false;
       currentTabId = null;
     }
+  });
+
+  window.addEventListener('pagehide', () => {
+    if (isOpen) dismiss();
   });
 
   /* ── Messages ───────────────────────────────────────────── */
