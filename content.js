@@ -83,7 +83,7 @@
 
   function scrollSelectedIntoView() {
     const card = document.querySelector('.__altab-card.selected');
-    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    if (card) card.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
   }
 
   function updateSelection() {
@@ -134,10 +134,10 @@
 
   function commitAndClose() {
     const target = tabs[selectedIdx];
-    dismiss();
     if (target && target.id !== currentTabId) {
       chrome.runtime.sendMessage({ action: 'switch-tab', tabId: target.id });
     }
+    dismiss();
   }
 
   function cycle(delta) {
