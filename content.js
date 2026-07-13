@@ -105,7 +105,7 @@
     currentTabId = activeId;
 
     const curIdx = tabs.findIndex(t => t.id === activeId);
-    selectedIdx = (curIdx + 1) % tabs.length;
+    selectedIdx = curIdx >= 0 ? (curIdx + 1) % tabs.length : 0;
 
     buildOverlay();
     const overlay = document.getElementById(OVERLAY_ID);
