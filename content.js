@@ -119,6 +119,16 @@
     isOpen = true;
   }
 
+  function hideOverlay() {
+    const overlay = document.getElementById(OVERLAY_ID);
+    if (overlay) {
+      overlay.style.display = 'none';
+      overlay.classList.remove('visible');
+    }
+    isOpen = false;
+    currentTabId = null;
+  }
+
   function dismiss() {
     if (!isOpen) return;
     const overlay = document.getElementById(OVERLAY_ID);
@@ -138,7 +148,7 @@
     if (target && target.id !== currentTabId) {
       chrome.runtime.sendMessage({ action: 'switch-tab', tabId: target.id });
     }
-    dismiss();
+    hideOverlay();
   }
 
   function cycle(delta) {
@@ -205,19 +215,25 @@
 
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && isOpen) {
-      dismiss();
-    }
-  });
-
-  window.addEventListener('pageshow', (e) => {
-    if (e.persisted) {
-      isOpen = false;
-      currentTabId = null;
+      hideOverlay();
     }
   });
 
   window.addEventListener('pagehide', () => {
-    if (isOpen) dismiss();
+    if (isOpen) hideOverlay();
+  });
+
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) {
+      // Safety net: bfcache snapshot may have captured overlay before pagehide ran
+      const overlay = document.getElementById(OVERLAY_ID);
+      if (overlay) {
+        overlay.style.display = 'none';
+        overlay.classList.remove('visible');
+      }
+      isOpen = false;
+      currentTabId = null;
+    }
   });
 
   /* ── Messages ───────────────────────────────────────────── */
