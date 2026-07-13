@@ -32,7 +32,7 @@
     backdrop.appendChild(titleBar);
     backdrop.appendChild(container);
     backdrop.appendChild(counter);
-    document.body.appendChild(backdrop);
+    document.documentElement.appendChild(backdrop);
 
     backdrop.addEventListener('click', (e) => {
       if (e.target === backdrop) dismiss();
@@ -102,6 +102,7 @@
   function show(tabList, activeId) {
     if (!document.body) return;
     tabs = tabList;
+
     currentTabId = activeId;
 
     const curIdx = tabs.findIndex(t => t.id === activeId);
@@ -199,6 +200,15 @@
       commitAndClose();
     }
   }, true);
+
+  /* ── bfcache ────────────────────────────────────────────── */
+
+  window.addEventListener('pageshow', (e) => {
+    if (e.persisted) {
+      isOpen = false;
+      currentTabId = null;
+    }
+  });
 
   /* ── Messages ───────────────────────────────────────────── */
 
