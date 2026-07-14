@@ -217,6 +217,14 @@
     if (document.hidden && isOpen) {
       hideOverlay();
     }
+    // 防御性清理：慢页面可能导致 hidden 事件被延迟/丢弃，
+    // 回到前台时如果 overlay 仍处于显示状态，强制隐藏
+    if (!document.hidden) {
+      const overlay = document.getElementById(OVERLAY_ID);
+      if (overlay && overlay.classList.contains('visible')) {
+        hideOverlay();
+      }
+    }
   });
 
   window.addEventListener('pagehide', () => {
